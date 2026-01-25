@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sube tu foto - Evento</title>
+<style>
+  /* === Estilo general === */
+  body { 
+    font-family: 'Arial', sans-serif; 
+    background: #111; 
+    color: #fff; 
+    margin: 0; 
+    padding: 0; 
+    text-align: center; 
+  }
+
+  header { 
+    background: #222; 
+    padding: 1rem 0; 
+  }
+
+  img.logo { 
+    height: 60px; 
+    margin-bottom: 10px; 
+  }
+
+  h1 { 
+    margin: 0; 
+    font-size: 1.8rem; 
+  }
+
+  .upload-container { 
+    margin: 50px auto; 
+    max-width: 500px; 
+    background: #1a1a1a; 
+    padding: 30px; 
+    border-radius: 10px; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  input[type="file"] { 
+    padding: 10px; 
+    margin-top: 20px; 
+    width: 100%; 
+    background: #333; 
+    border: none; 
+    color: #fff;
+    border-radius: 5px;
+  }
+
+  button { 
+    padding: 10px 20px; 
+    margin-top: 20px; 
+    cursor: pointer; 
+    background: #00bfff; 
+    border: none; 
+    color: #fff; 
+    font-size: 1rem; 
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+
+  button:hover { background: #009acd; }
+
+  .preview { 
+    margin-top: 20px; 
+    max-width: 100%; 
+    height: auto; 
+    border-radius: 5px;
+    display: none; 
+    border: 2px solid #00bfff;
+  }
+
+  .alert {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #ff5555;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo.png" class="logo" alt="Logo Evento">
+  <h1>Sube tu foto al evento</h1>
+</header>
+
+<div class="upload-container">
+  <input type="file" id="fileInput" accept="image/*">
+  <button id="uploadBtn">Subir foto</button>
+  <img id="preview" class="preview" src="">
+  <div id="alert" class="alert"></div>
+</div>
+
+<!-- Librería Axios para subir fotos -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
+<script>
+  // === CONFIGURA TU CLOUDINARY ===
+  const cloudName = "TU_CLOUD_NAME"; // Reemplaza con tu cloud name de Cloudinary
+  const unsignedUploadPreset = "TU_UPLOAD_PRESET"; // Reemplaza con tu preset sin firmar
+
+  const fileInput = document.getElementById('fileInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const preview = document.getElementById('preview');
+  const alertBox = document.getElementById('alert');
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if(file) {
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      alertBox.textContent = "";
+    }
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if(!file) {
+      alertBox.textContent = "Selecciona una foto primero";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', unsignedUploadPreset);
+
+    try {
+      const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, formData);
+      alertBox.style.color = '#00ff7f';
+      alertBox.textContent = "¡Foto subida correctamente!";
+      console.log("URL de la foto:", res.data.secure_url);
+      // Limpiar inputs
+      preview.src = "";
+      preview.style.display = 'none';
+      fileInput.value = "";
+    } catch(err) {
+      console.error(err);
+      alertBox.style.color = '#ff5555';
+      alertBox.textContent = "Error subiendo la foto. Intenta de nuevo.";
+    }
+  });
+</script>
+</body>
+</html>
