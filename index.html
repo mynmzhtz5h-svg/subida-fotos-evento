@@ -121,10 +121,14 @@
     const fileName =
       `${safeNombre}___${safeMensaje}___${Date.now()}.${file.name.split('.').pop()}`;
 
-    const { error } = await supabase
-      .storage
-      .from("fotos-evento")
-      .upload(fileName, file);
+   const { error } = await supabase
+  .storage
+  .from("fotos-evento")
+  .upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type
+  });
 
     if (error) {
       console.error(error);
