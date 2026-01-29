@@ -101,14 +101,16 @@
   const btn = document.getElementById("btn");
   const estado = document.getElementById("estado");
 
-  // 🔐 FUNCIÓN CLAVE
-  function limpiarTexto(texto) {
+  // 🔐 FUNCIÓN CLAVE CORREGIDA
+  function limpiarTexto(texto, esNombre = false) {
+    if (!texto.trim()) {
+      return esNombre ? "anonimo" : ""; // solo el nombre obtiene valor predeterminado
+    }
     return texto
       .normalize("NFD")                     // separa acentos
       .replace(/[\u0300-\u036f]/g, "")     // elimina acentos
-      .replace(/[^a-zA-Z0-9ñÑ_-]/g, "")    // solo caracteres seguros
-      .replace(/\s+/g, "_")
-      .substring(0, 40) || "anonimo";
+      .replace(/[^a-zA-Z0-9ñÑ _-]/g, "")  // permite espacios
+      .trim();
   }
 
   btn.onclick = async () => {
@@ -126,8 +128,8 @@
 
     const file = fileInput.files[0];
 
-    const nombre = limpiarTexto(nombreRaw);
-    const mensaje = limpiarTexto(mensajeRaw);
+    const nombre = limpiarTexto(nombreRaw, true);
+    const mensaje = limpiarTexto(mensajeRaw, false);
     const ext = file.name.split(".").pop().toLowerCase();
 
     const fileName =
@@ -145,7 +147,7 @@
 
       if (error) throw error;
 
-      estado.textContent = "✅ Foto subida correctamente";
+      estado.textContent = "✅ Foto subida correctamente, Mirá la pantalla!";
       fileInput.value = "";
       document.getElementById("mensaje").value = "";
 
