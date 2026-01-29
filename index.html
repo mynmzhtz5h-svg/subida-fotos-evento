@@ -5,36 +5,44 @@
   <title>Subí tu foto</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     body {
       margin: 0;
       background: #000;
       color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-family: system-ui, sans-serif;
       height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* LOGO ARRIBA */
+    .logo-container {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    .logo-container img {
+      width: 220px;
+      max-width: 70vw;
     }
 
     .container {
-      text-align: center;
       width: 90%;
       max-width: 420px;
-    }
-
-    img.logo {
-      max-width: 220px;
-      margin-bottom: 20px;
+      text-align: center;
+      margin-top: 120px;
     }
 
     input, textarea {
       width: 100%;
       padding: 14px;
       margin-bottom: 12px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: none;
       font-size: 16px;
       background: #111;
@@ -48,22 +56,22 @@
 
     button {
       width: 100%;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 16px;
+      border-radius: 14px;
       border: none;
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
       color: #fff;
 
       background: linear-gradient(135deg, #00c853, #2979ff);
-      transition: transform .15s ease, box-shadow .15s ease, opacity .15s;
-      box-shadow: 0 8px 24px rgba(0, 150, 255, 0.35);
+      box-shadow: 0 8px 26px rgba(0, 160, 255, 0.45);
+      transition: transform .15s ease, box-shadow .15s ease;
     }
 
     button:hover {
-      transform: scale(1.02);
-      box-shadow: 0 10px 28px rgba(0, 200, 120, 0.45);
+      transform: scale(1.03);
+      box-shadow: 0 12px 34px rgba(0, 200, 120, 0.6);
     }
 
     button:disabled {
@@ -73,7 +81,7 @@
     }
 
     .estado {
-      margin-top: 12px;
+      margin-top: 14px;
       font-size: 14px;
       opacity: 0.85;
     }
@@ -81,9 +89,14 @@
 </head>
 
 <body>
-  <div class="container">
-    <img src="logo.png" class="logo" alt="Logo">
 
+  <!-- LOGO -->
+  <div class="logo-container">
+    <img src="logo.png" alt="Logo">
+  </div>
+
+  <!-- FORM -->
+  <div class="container">
     <input id="nombre" type="text" placeholder="Tu nombre">
     <textarea id="mensaje" placeholder="Mensaje (opcional)"></textarea>
     <input id="foto" type="file" accept="image/*">
@@ -92,22 +105,19 @@
     <div class="estado" id="estado"></div>
   </div>
 
-<script>
-  // ======================
-  // SUPABASE
-  // ======================
+<!-- ⚠️ SCRIPT COMO MODULE (OBLIGATORIO) -->
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
   const SUPABASE_URL = "https://mjmbvzvirvtsihtyrqqf.supabase.co";
   const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbWJ2enZpcnZ0c2lodHlycXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDk2ODUsImV4cCI6MjA4NTIyNTY4NX0.ZHo3Tsi2GwJFvW3iwOKBQ6c_6KhHx2Ju8wUrU223zkU";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbWJ2enZpcnZ0c2lodHlycXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDk2ODUsImV4cCI6MjA4NTIyNTY4NX0.ZHo3Tsi2GwJFvW3iwOKBQ6c_6KhHx2Ju8wUrU223zkU";
 
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const btn = document.getElementById("btn");
   const estado = document.getElementById("estado");
 
-  // ======================
-  // Limpieza (acepta Ñ)
-  // ======================
   function limpiarTexto(t) {
     return t
       .trim()
@@ -115,9 +125,6 @@
       .replace(/\s+/g, "_");
   }
 
-  // ======================
-  // SUBIR FOTO
-  // ======================
   btn.onclick = async () => {
     estado.textContent = "";
     btn.disabled = true;
@@ -137,14 +144,15 @@
     const ext = archivo.name.split(".").pop();
     const ts = Date.now();
 
-    const rawName = `${n}___${m}___${ts}.${ext}`;
-    const safeName = encodeURIComponent(rawName);
+    const nombreArchivo = encodeURIComponent(
+      `${n}___${m}___${ts}.${ext}`
+    );
 
     try {
       const { error } = await supabase
         .storage
         .from("evento")
-        .upload(safeName, archivo, { upsert: false });
+        .upload(nombreArchivo, archivo);
 
       if (error) throw error;
 
@@ -160,5 +168,6 @@
     btn.disabled = false;
   };
 </script>
+
 </body>
 </html>
