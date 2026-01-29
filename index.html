@@ -1,186 +1,156 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Subí tu foto</title>
+  <meta charset="UTF-8" />
+  <title>Subí tu foto al evento</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: linear-gradient(160deg, #0a0a0a, #111);
-    font-family: system-ui, sans-serif;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #000, #111);
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-  .card {
-    width: 92vw;
-    max-width: 420px;
-    background: #141414;
-    padding: 28px;
-    border-radius: 22px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
+    .card {
+      background: #0f0f0f;
+      padding: 28px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      text-align: center;
+    }
 
-  .logo {
-    text-align: center;
-    margin-bottom: 10px;
-  }
+    img.logo {
+      width: 180px;
+      margin-bottom: 18px;
+    }
 
-  .logo img {
-    width: 70%;
-    max-width: 240px;
-  }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 16px;
+    }
 
-  h1 {
-    font-size: 20px;
-    text-align: center;
-    margin: 0;
-  }
+    input, textarea, button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
 
-  p {
-    text-align: center;
-    font-size: 14px;
-    opacity: 0.85;
-    margin: 0 0 10px;
-  }
+    input, textarea {
+      background: #1a1a1a;
+      color: #fff;
+    }
 
-  label {
-    font-size: 13px;
-    opacity: 0.85;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+    textarea {
+      resize: none;
+      height: 80px;
+    }
 
-  input[type="text"],
-  input[type="file"] {
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    font-size: 15px;
-  }
+    button {
+      background: #ffffff;
+      color: #000;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, opacity .15s ease;
+    }
 
-  input[type="file"] {
-    background: white;
-    color: black;
-  }
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
 
-  button {
-    margin-top: 10px;
-    padding: 14px;
-    border-radius: 16px;
-    border: none;
-    background: #22c55e; /* verde */
-    color: #000;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-  }
+    button:active {
+      transform: scale(.98);
+    }
 
-  button:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-
-  .mensaje {
-    text-align: center;
-    font-size: 15px;
-    min-height: 22px;
-    margin-top: 6px;
-  }
-</style>
+    .estado {
+      margin-top: 16px;
+      font-size: 15px;
+      min-height: 20px;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="card">
+  <div class="card">
+    <img src="logo.png" class="logo" alt="Logo">
 
-  <!-- LOGO -->
-  <div class="logo">
-    <img src="logo.png" alt="craneos.uy">
+    <h1>Subí tu foto al evento 📸</h1>
+
+    <input type="file" id="foto" accept="image/*" />
+    <input type="text" id="nombre" placeholder="Tu nombre" />
+    <textarea id="mensaje" placeholder="Mensaje (opcional)"></textarea>
+
+    <button id="btn">Subir foto</button>
+
+    <div class="estado" id="estado"></div>
   </div>
 
-  <h1>Subí tu foto 📸</h1>
-  <p>Aparecerá en la pantalla del evento</p>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  <!-- FORMULARIO CON JS -->
-  <label>
-    Tu nombre
-    <input type="text" id="nombre" required placeholder="Ej: Ana">
-  </label>
+    // 🔐 SUPABASE
+    const supabase = createClient(
+      "https://mjmbvzvirvtsihtyrqqf.supabase.co",
+      "sb_publishable_h31fDIekbiPpvADEeD3jiA_oXqVBCLO"
+    );
 
-  <label>
-    Mensaje (opcional)
-    <input type="text" id="mensaje" placeholder="Ej: Tremenda noche">
-  </label>
+    const btn = document.getElementById("btn");
+    const estado = document.getElementById("estado");
 
-  <label>
-    Foto
-    <input type="file" id="fileInput" accept="image/*" required>
-  </label>
+    btn.onclick = async () => {
+      const fileInput = document.getElementById("foto");
+      const nombre = document.getElementById("nombre").value.trim();
+      const mensaje = document.getElementById("mensaje").value.trim();
 
-  <button id="btn">Subir foto</button>
-  <div class="mensaje" id="mensajeEstado"></div>
+      if (!fileInput.files.length || !nombre) {
+        estado.textContent = "⚠️ Seleccioná una foto y escribí tu nombre";
+        return;
+      }
 
-</div>
+      btn.disabled = true;
+      estado.textContent = "Subiendo foto… ⏳";
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
-<script>
-  // === CONFIGURA TU CLOUDINARY ===
-  const cloudName = "craneosuy"; // Reemplaza con tu cloud name
-  const unsignedUploadPreset = "evento_qr"; // Reemplaza con tu preset sin firmar
-  const folder = "evento-qr"; // Carpeta en Cloudinary
+      const file = fileInput.files[0];
+      const safeNombre = nombre.replace(/\s+/g, "_");
+      const safeMensaje = mensaje.replace(/\s+/g, "_");
 
-  const btn = document.getElementById("btn");
-  const estado = document.getElementById("mensajeEstado");
-  const nombreInput = document.getElementById("nombre");
-  const mensajeInput = document.getElementById("mensaje");
-  const fileInput = document.getElementById("fileInput");
+      const fileName =
+        `${safeNombre}___${safeMensaje}___${Date.now()}.${file.name.split('.').pop()}`;
 
-  btn.addEventListener("click", async () => {
-    const file = fileInput.files[0];
-    if (!file) {
-      estado.textContent = "Selecciona una foto primero";
-      return;
-    }
+      const { error } = await supabase
+        .storage
+        .from("fotos-evento")
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
 
-    const nombre = nombreInput.value.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
-    const mensaje = mensajeInput.value.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
-    const timestamp = Date.now();
-    const publicId = `${nombre}___${mensaje}___${timestamp}`;
+      if (error) {
+        console.error(error);
+        estado.textContent = "❌ Error al subir la foto";
+        btn.disabled = false;
+        return;
+      }
 
-    btn.disabled = true;
-    estado.textContent = "Subiendo foto…";
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", unsignedUploadPreset);
-    formData.append("folder", folder);
-    formData.append("public_id", publicId);
-
-    try {
-      const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
-      estado.textContent = "✅ Tu foto se subió con éxito. ¡Mirá la pantalla!";
-      nombreInput.value = "";
-      mensajeInput.value = "";
+      estado.textContent = "✅ Foto subida con éxito";
       fileInput.value = "";
+      document.getElementById("mensaje").value = "";
       btn.disabled = false;
-      console.log("URL de la foto:", res.data.secure_url);
-    } catch (err) {
-      console.error(err);
-      estado.textContent = "❌ Error subiendo la foto. Intenta de nuevo.";
-      btn.disabled = false;
-    }
-  });
-</script>
+    };
+  </script>
 
 </body>
 </html>
