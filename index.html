@@ -90,74 +90,110 @@
   <div class="estado" id="estado"></div>
 </div>
 
-<script type="module">
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<script src="config.js"></script>
 
-  const supabase = createClient(
-    "https://mjmbvzvirvtsihtyrqqf.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1qbWJ2enZpcnZ0c2lodHlycXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2NDk2ODUsImV4cCI6MjA4NTIyNTY4NX0.ZHo3Tsi2GwJFvW3iwOKBQ6c_6KhHx2Ju8wUrU223zkU"
-  );
+<script>
+const btn = document.getElementById("btn");
+const estado = document.getElementById("estado");
 
-  const btn = document.getElementById("btn");
-  const estado = document.getElementById("estado");
+function limpiarTexto(texto, esNombre = false) {
+  if (!texto.trim()) {
+    return esNombre ? "anonimo" : "";
+  }
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9ñÑ _-]/g, "")
+    .trim();
+}
 
-  // 🔐 FUNCIÓN CLAVE CORREGIDA
-  function limpiarTexto(texto, esNombre = false) {
-    if (!texto.trim()) {
-      return esNombre ? "anonimo" : ""; // solo el nombre obtiene valor predeterminado
-    }
-    return texto
-      .normalize("NFD")                     // separa acentos
-      .replace(/[\u0300-\u036f]/g, "")     // elimina acentos
-      .replace(/[^a-zA-Z0-9ñÑ _-]/g, "")  // permite espacios
-      .trim();
+btn.onclick = async () => {
+  const fileInput = document.getElementById("foto");
+  const nombreRaw = document.getElementById("nombre").value;
+  const mensajeRaw = document.getElementById("mensaje").value;
+
+  if (!fileInput.files.length || !nombreRaw.trim()) {
+    estado.textContent = "⚠️ Foto y nombre obligatorios";
+    return;
   }
 
-  btn.onclick = async () => {
-    const fileInput = document.getElementById("foto");
-    const nombreRaw = document.getElementById("nombre").value;
-    const mensajeRaw = document.getElementById("mensaje").value;
+  btn.disabled = true;
+  estado.textContent = "Subiendo foto… ⏳";
 
-    if (!fileInput.files.length || !nombreRaw.trim()) {
-      estado.textContent = "⚠️ Foto y nombre obligatorios";
-      return;
-    }
+  const file = fileInput.files[0];
+  const nombre = limpiarTexto(nombreRaw, true);
+  const mensaje = limpiarTexto(mensajeRaw, false);
+  const ext = file.name.split(".").pop().toLowerCase();
 
-    btn.disabled = true;
-    estado.textContent = "Subiendo foto… ⏳";
+  const fileName = `${nombre}___${mensaje}___${Date.now()}.${ext}`;
 
-    const file = fileInput.files[0];
+  try {
+    // convertir a base64
+    const base64 = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(",")[1]);
+      r.readAsDataURL(file);
+    });
 
-    const nombre = limpiarTexto(nombreRaw, true);
-    const mensaje = limpiarTexto(mensajeRaw, false);
-    const ext = file.name.split(".").pop().toLowerCase();
+    // subir imagen
+    await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/fotos/${fileName}`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${CONFIG.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "subida foto",
+        content: base64,
+        branch: CONFIG.branch
+      })
+    });
 
-    const fileName =
-      `${nombre}___${mensaje}___${Date.now()}.${ext}`;
+    // leer fotos.json
+    const fotosResp = await fetch(
+      `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/fotos.json?${Date.now()}`
+    );
+    const fotos = await fotosResp.json();
 
-    try {
-      const { error } = await supabase
-        .storage
-        .from("evento")
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: file.type
-        });
+    fotos.unshift({
+      img: `https://${CONFIG.owner}.github.io/${CONFIG.repo}/fotos/${fileName}`,
+      nombre,
+      mensaje
+    });
 
-      if (error) throw error;
+    // obtener SHA actual
+    const shaResp = await fetch(
+      `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/fotos.json`,
+      { headers: { "Authorization": `token ${CONFIG.token}` } }
+    );
+    const shaData = await shaResp.json();
 
-      estado.textContent = "✅ Foto subida correctamente, Mirá la pantalla!";
-      fileInput.value = "";
-      document.getElementById("mensaje").value = "";
+    // subir fotos.json actualizado
+    await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/fotos.json`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `token ${CONFIG.token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "update fotos",
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(fotos, null, 2)))),
+        sha: shaData.sha,
+        branch: CONFIG.branch
+      })
+    });
 
-    } catch (e) {
-      console.error(e);
-      estado.textContent = "❌ Error al subir la foto";
-    }
+    estado.textContent = "✅ Foto subida correctamente, Mirá la pantalla!";
+    fileInput.value = "";
+    document.getElementById("mensaje").value = "";
 
-    btn.disabled = false;
-  };
+  } catch (e) {
+    console.error(e);
+    estado.textContent = "❌ Error al subir la foto";
+  }
+
+  btn.disabled = false;
+};
 </script>
 
 </body>
